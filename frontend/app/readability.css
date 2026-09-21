@@ -1,0 +1,184 @@
+/* Keep quiet surfaces, with text contrast independent of the decorative palette. */
+body {
+  font-family: Inter, Arial, sans-serif;
+}
+:root {
+  --muted: #696575;
+}
+.eyebrow,
+.last-updated,
+.stat-card small,
+.section-heading p,
+.legend,
+.timeline-axis > span,
+.timeline-axis small,
+.topic-index,
+.timeline-label small,
+.timeline-bottom,
+.topic-card p,
+.topic-card-footer,
+.article-meta,
+.article-list p,
+.drawer-summary,
+footer,
+.footer-brand,
+.view-tabs button,
+.source-select,
+.date-filters input,
+.clear-filter,
+.search-input input::placeholder,
+.load-more,
+.muted {
+  color: #706879;
+}
+.hero p,
+.stat-card > div,
+.auto-refresh {
+  color: #716b7c;
+}
+.mode-banner {
+  color: #6b607f;
+}
+.mode-banner button {
+  color: #655188;
+}
+.status-pill.sample {
+  color: #806030;
+}
+.timeline-axis > div {
+  color: #74657e;
+}
+.count-badge,
+.keyword-list > span {
+  color: #78618e;
+}
+.article-link {
+  color: #785298;
+}
+.view-tabs .selected {
+  color: #73579a;
+}
+.tone-0 {
+  --bar-ink: #6d498f;
+}
+.tone-1 {
+  --bar-ink: #42688d;
+}
+.tone-2 {
+  --bar-ink: #386b59;
+}
+.tone-3 {
+  --bar-ink: #8d6136;
+}
+.tone-4 {
+  --bar-ink: #94536d;
+}
+.tone-5 {
+  --bar-ink: #5c6195;
+}
+.timeline-bar {
+  opacity: 1;
+  height: calc(28px + var(--weight) * 6px);
+}
+.bar-text {
+  font-size: 11px;
+}
+.timeline-label strong {
+  font-size: 12px;
+}
+.timeline-label small {
+  font-size: 10px;
+}
+.stat-card > div,
+.section-heading p,
+.search-input input,
+.source-select select,
+.mode-banner,
+.mode-banner button {
+  font-size: 12px;
+}
+.stat-card small,
+.timeline-axis > span,
+.timeline-axis > div,
+.legend,
+.timeline-bottom,
+.topic-card p,
+.topic-card-footer,
+.topic-category,
+.last-updated,
+.view-tabs button,
+.date-filters input {
+  font-size: 10px;
+}
+.topic-card h3 {
+  font-size: 15px;
+}
+.topic-category {
+  font-weight: 600;
+}
+.source-badge.bbc {
+  background: #9b3e47;
+}
+.source-badge.guardian {
+  background: #326995;
+}
+.source-badge.jazeera {
+  background: #896020;
+}
+.sample-note {
+  color: #806635;
+}
+.timeline-label strong {
+  max-width: 220px;
+}
+.icon-button {
+  min-width: 32px;
+  min-height: 32px;
+}
+.mobile-hint {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .timeline-label strong {
+    max-width: 180px;
+  }
+}
+@media (max-width: 767px) {
+  .button,
+  .mode-banner button,
+  .clear-filter,
+  .view-tabs button,
+  .source-select,
+  .search-input,
+  .date-filters,
+  .icon-button {
+    min-height: 44px;
+  }
+  .icon-button {
+    min-width: 44px;
+  }
+  .timeline-label strong {
+    max-width: 170px;
+  }
+  .mode-banner,
+  .mode-banner button {
+    font-size: 10px;
+  }
+  .mode-banner {
+    align-items: center;
+  }
+  .legend {
+    font-size: 9px;
+    flex-wrap: wrap;
+  }
+  .hero .last-updated {
+    font-size: 10px;
+  }
+  .mobile-hint {
+    display: block;
+    font-size: 10px;
+    color: #706879;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+}

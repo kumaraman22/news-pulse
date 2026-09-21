@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - news-pulse-data:/data/db
+    healthcheck:
+      test:
+        ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  api:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/news_pulse
+      MONGODB_DB: news_pulse
+      FRONTEND_ORIGIN: http://localhost:3000
+      SIMILARITY_THRESHOLD: "0.18"
+    depends_on:
+      mongo:
+        condition: service_healthy
+volumes:
+  news-pulse-data:

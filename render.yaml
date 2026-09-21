@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: news-pulse-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: news_pulse
+      - key: FRONTEND_ORIGIN
+        sync: false
+      - key: TRUST_PROXY
+        value: "1"
+      - key: SIMILARITY_THRESHOLD
+        value: "0.18"
+      - key: MAX_ARTICLES_PER_FEED
+        value: "25"
+      - key: CLUSTER_WINDOW_DAYS
+        value: "7"

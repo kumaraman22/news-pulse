@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/.env
+**/.env.local
+.venv
+.git
+.local
+frontend/.next
+test-results
+playwright-report
+tmp
+**/__pycache__
