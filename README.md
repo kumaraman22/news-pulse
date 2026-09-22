@@ -120,7 +120,9 @@ The active timeline includes at most the latest **1,000 articles from seven days
 
 Python writes all new articles first, then atomically replaces the complete snapshot in a single MongoDB operation. Express reads this snapshot and resolves its article IDs; readers cannot see a half-deleted or half-rebuilt cluster list. Article `clusterId` values are convenience metadata; the snapshot's membership is authoritative. This works on standalone local MongoDB without requiring transactions or a replica set.
 
-The API starts Python without a shell and returns a job immediately. It applies a worker timeout, handles spawn/exit failures, and marks expired active jobs failed after restarts. Browser polling reconnects after transient network failures and remembers the job ID in session storage. Auto-sync fetches the timeline every 60 seconds while the page is visible; it does not launch ingestion. Collection happens on Refresh Data.
+The API starts Python without a shell and returns a job immediately. The worker writes a heartbeat every 10 seconds. A recovery check every 15 seconds fails jobs whose heartbeat is over 90 seconds old, including after API restarts, so abandoned jobs cannot hold the refresh lock indefinitely. A separate maximum-runtime timeout still applies. Article-level progress updates make long feed extractions visible. Browser polling reconnects after transient network failures and remembers the job ID in session storage. Auto-sync fetches the timeline every 60 seconds while the page is visible; it does not launch ingestion. Collection happens on Refresh Data.
+
+The normal `npm run dev` command keeps the API process stable while the frontend hot-reloads. Restart the API after backend edits. `npm run dev:watch -w backend` enables optional backend file watching; editing files during collection may interrupt its worker.
 
 ## API
 

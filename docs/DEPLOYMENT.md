@@ -54,5 +54,5 @@ Set `NEXT_PUBLIC_API_URL=https://YOUR-RENDER-SERVICE.onrender.com/api` before bu
 - **Python cannot start:** point `PYTHON_BIN` to the installed virtual environment executable.
 - **Job fails / database unavailable:** check Atlas network access and user permissions without printing the connection string.
 - **Publisher extraction warnings:** summary fallback is intentional; check per-feed results to distinguish feed failures from blocked article pages.
-- **Worker interrupted:** expired jobs recover after the configured maximum duration plus a short grace period. Retrying while a job is active attaches the browser to that job.
+- **Worker interrupted:** workers send a heartbeat every 10 seconds. Jobs missing a heartbeat for 90 seconds are failed by a recovery check every 15 seconds, releasing Refresh Data. Retrying while a healthy job is active attaches the browser to that job. The configured maximum duration also applies.
 - **Low-memory host:** reduce articles per feed/window; the snapshot is capped at 1,000 articles, but TF-IDF processing still needs memory. Review observed usage before choosing a paid tier.

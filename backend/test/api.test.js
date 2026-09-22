@@ -6,7 +6,31 @@ import request from "supertest";
 import { createApp } from "../src/app.js";
 import { Article, Snapshot, IngestionJob } from "../src/models.js";
 import { readConfig } from "../src/config.js";
+import { recoverStaleJobs } from "../src/jobs.js";
 let db, app;
+test("a stopped worker is failed and releases the ingestion lock", async () => {
+  const now = new Date();
+  const job = await IngestionJob.create({
+    status: "running",
+    active: true,
+    heartbeatAt: new Date(now - 120000),
+  });
+  await recoverStaleJobs(readConfig({}), now);
+  const recovered = await IngestionJob.findById(job._id).lean();
+  assert.equal(recovered.status, "failed");
+  assert.equal(recovered.active, false);
+  await request(app).post("/api/ingest/trigger").send({}).expect(202);
+});
+test("a live worker survives recovery after an API restart", async () => {
+  const now = new Date();
+  const job = await IngestionJob.create({
+    status: "running",
+    active: true,
+    heartbeatAt: now,
+  });
+  await recoverStaleJobs(readConfig({}), now);
+  assert.equal((await IngestionJob.findById(job._id)).status, "running");
+});
 const clusterId = "1234567890abcdef12345678";
 before(async () => {
   db = await MongoMemoryServer.create();

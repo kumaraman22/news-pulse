@@ -4,6 +4,7 @@ import ipaddress
 import json
 import os
 import socket
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 from pathlib import Path
@@ -21,6 +22,21 @@ from core import normalize_entry, normalize_url, group_articles, utcnow
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
 load_dotenv(ROOT.parent / 'backend' / '.env')
+
+def heartbeat(db, job_id, stopped):
+    """Renew the worker lease independently of slow publisher requests."""
+    while not stopped.is_set():
+        try:
+            renewed = db.ingestionjobs.update_one(
+                {'_id': job_id, 'active': True},
+                {'$set': {'heartbeatAt': utcnow()}},
+            )
+            if not renewed.matched_count:
+                return
+        except Exception:
+            pass  # The API expires the lease if database access does not recover.
+        if stopped.wait(10):
+            return
 
 def fetch_public(url, timeout=15, max_bytes=3_000_000):
     """Bound downloads and revalidate every redirect, including private-network targets."""
@@ -108,6 +124,10 @@ def run(db, job_id):
                         result['extracted'] += int(article['extractionMethod'] != 'rss-summary')
                     except DuplicateKeyError:
                         result['skipped'] += 1
+                    db.ingestionjobs.update_one({'_id': job_id, 'active': True}, {'$set': {
+                        'articlesAdded': added,
+                        'progress': f"Reading {feed['name']}: {result['added']} new articles collected",
+                    }})
             if result['added'] > result['extracted']:
                 warnings.append(f"{feed['name']}: {result['added'] - result['extracted']} articles use RSS summaries because full text was unavailable.")
         except Exception:
@@ -125,6 +145,8 @@ def run(db, job_id):
     clusters = group_articles(articles, threshold)
     old = db.snapshots.find_one({'_id': 'timeline'}) or {}
     old_ids = {c['_id'] for c in old.get('clusters', [])}
+    if not db.ingestionjobs.find_one({'_id': job_id, 'active': True}):
+        raise RuntimeError('The ingestion job expired before publication. Please retry.')
     # A single replace operation is the publication boundary; API readers keep a consistent snapshot.
     db.snapshots.replace_one({'_id': 'timeline'}, {
         '_id': 'timeline', 'clusters': clusters, 'updatedAt': utcnow(), 'sources': sorted({a['source'] for a in articles}),
@@ -147,9 +169,15 @@ if __name__ == '__main__':
         job_id = ObjectId(args.job_id)
         if not db.ingestionjobs.find_one({'_id': job_id, 'active': True}):
             raise SystemExit('Start ingestion through POST /api/ingest/trigger.')
+        stopped = threading.Event()
+        pulse = threading.Thread(target=heartbeat, args=(db, job_id, stopped), daemon=True)
+        pulse.start()
         try:
             run(db, job_id)
         except Exception as error:
             message = str(error) if isinstance(error, RuntimeError) else 'Pipeline failed. Check database connectivity and pipeline configuration.'
             db.ingestionjobs.update_one({'_id': job_id}, {'$set': {'status': 'failed', 'active': False, 'completedAt': utcnow(), 'errorMessage': message}})
             raise SystemExit(1)
+        finally:
+            stopped.set()
+            pulse.join(timeout=2)

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { readConfig } from "./config.js";
 import { createApp } from "./app.js";
-import { createJobRunner } from "./jobs.js";
+import { createJobRunner, recoverStaleJobs } from "./jobs.js";
 import { Article, Snapshot, IngestionJob } from "./models.js";
 const config = readConfig();
 mongoose.set("bufferCommands", false);
@@ -16,24 +16,10 @@ async function connect() {
       serverSelectionTimeoutMS: 5000,
     });
     await Promise.all([Article.init(), Snapshot.init(), IngestionJob.init()]);
-    // A persisted lease expires after the maximum job duration, including after restarts.
-    const recover = () =>
-      IngestionJob.updateMany(
-        {
-          active: true,
-          createdAt: {
-            $lt: new Date(Date.now() - config.INGEST_TIMEOUT_MS - 30000),
-          },
-        },
-        {
-          status: "failed",
-          active: false,
-          completedAt: new Date(),
-          errorMessage: "The worker stopped before completion. Please retry.",
-        },
-      ).catch(() => {});
+    // Worker heartbeats survive API restarts; a dead worker releases its lock promptly.
+    const recover = () => recoverStaleJobs(config).catch(() => {});
     await recover();
-    setInterval(recover, 30000).unref();
+    setInterval(recover, 15000).unref();
     console.log("MongoDB connected; ingestion worker ready");
   } catch {
     console.error("MongoDB unavailable; retrying in 10 seconds.");

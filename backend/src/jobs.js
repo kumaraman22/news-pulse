@@ -1,6 +1,30 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { IngestionJob } from "./models.js";
+export async function recoverStaleJobs(config, now = new Date()) {
+  const stale = new Date(now.getTime() - 90000);
+  return IngestionJob.updateMany(
+    {
+      active: true,
+      $or: [
+        { heartbeatAt: { $lt: stale } },
+        { heartbeatAt: { $exists: false }, createdAt: { $lt: stale } },
+        {
+          createdAt: {
+            $lt: new Date(now.getTime() - config.INGEST_TIMEOUT_MS - 30000),
+          },
+        },
+      ],
+    },
+    {
+      status: "failed",
+      active: false,
+      completedAt: now,
+      errorMessage:
+        "The ingestion worker stopped responding. Please refresh again.",
+    },
+  );
+}
 export function createJobRunner(config) {
   return async (job) => {
     await IngestionJob.updateOne(
@@ -8,6 +32,7 @@ export function createJobRunner(config) {
       {
         status: "running",
         startedAt: new Date(),
+        heartbeatAt: new Date(),
         progress: "Collecting articles from RSS feeds",
       },
     );

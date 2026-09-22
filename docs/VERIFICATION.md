@@ -1,9 +1,9 @@
-# Local verification — 21 September 2026
+# Local verification — updated 22 September 2026
 
 | Check | Result |
 | --- | --- |
 | Python tests | 9 passed |
-| Backend/configuration tests | 10 passed against isolated real MongoDB |
+| Backend/configuration tests | 12 passed against isolated real MongoDB, including stale-worker recovery |
 | Frontend component tests | 5 passed |
 | Browser tests | 3 passed, including opt-in live RSS flow |
 | Accessibility | Dashboard and drawer: no violations detected by axe WCAG 2 A/AA and 2.1 AA checks |
@@ -26,3 +26,9 @@ The live browser test triggers the real API, polls job completion, reloads the t
 - Automated accessibility checks do not replace a full manual assistive-technology audit.
 - The walkthrough script is ready; an actual 2–3 minute video still needs recording.
 - Original assessment pages 7–8 remain unavailable for submission-requirement verification.
+
+## Refresh recovery — 22 September
+
+A refresh stayed marked running after its Python worker disappeared during API restarts. The original maximum-runtime recovery left the UI busy for up to ten minutes. The fix adds worker heartbeats every ten seconds and stale-job recovery after 90 seconds, checked every 15 seconds, while preserving the separate maximum-runtime limit. Normal development now runs the API without automatic file-watch restarts; optional `dev:watch` remains available.
+
+Verified recovery cleared the abandoned job. Clicking Refresh Data in the user's open browser completed in about six seconds, collected 25 new articles, and showed the success message with the button enabled again. A second browser-driven refresh processed all three feeds, skipped all 75 existing entries, and completed with zero new articles and no warnings. The snapshot held 159 articles across 142 topics. All 29 automated tests passed after the fix, including three browser tests covering live refresh, source filtering, article details, accessibility, and responsive layouts.

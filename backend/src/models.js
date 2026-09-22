@@ -55,6 +55,7 @@ const jobSchema = new Schema(
     },
     active: Boolean,
     startedAt: Date,
+    heartbeatAt: Date,
     completedAt: Date,
     articlesAdded: { type: Number, default: 0 },
     clustersCreated: { type: Number, default: 0 },
