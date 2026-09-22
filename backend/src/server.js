@@ -21,8 +21,16 @@ async function connect() {
     await recover();
     setInterval(recover, 15000).unref();
     console.log("MongoDB connected; ingestion worker ready");
-  } catch {
-    console.error("MongoDB unavailable; retrying in 10 seconds.");
+  } catch (error) {
+    const reason = error.code === 18 || error.code === 8000
+      ? "authentication failed; verify the Atlas username and password"
+      : error.code === 13
+        ? "database permissions denied; verify the database user role"
+        : error.name === "MongooseServerSelectionError"
+          ? "server selection failed; verify Atlas network access and cluster availability"
+          : "connection or index initialization failed";
+    // Never log the driver message or URI: either can contain credentials.
+    console.error(`MongoDB unavailable (${reason}); retrying in 10 seconds.`);
     setTimeout(connect, 10000).unref();
   }
 }
